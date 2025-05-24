@@ -84,14 +84,14 @@ export default function Home() {
       try {
         const REVIEWS_QUERY = `
           query Review {
-  allReviews {
-    id
-    title
-    stars
-    review
-    author
-  }
-}
+            allReviews {
+              id
+              title
+              stars
+              review
+              author
+            }
+          }
         `;
 
         const data = await performRequest(REVIEWS_QUERY);

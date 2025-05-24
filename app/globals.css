@@ -1,19 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  
-  /* Ensure font variables have fallback values */
-  --font-futura: 'Futura', sans-serif;
-  --font-meie-script: 'Meie Script', cursive;
-}
-
-/* Define explicit CSS classes for font usage */
-.font-futura {
-  font-family: var(--font-futura);
-}
-
-.font-meie-script {
-  font-family: var(--font-meie-script);
+@theme {
+  --font-futura: Furura, sans-serif;
+  --font-meie-script: Meie Script, sans-serif;
 }
