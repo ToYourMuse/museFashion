@@ -5,7 +5,9 @@ const Navbar = () => {
   return (
     <div className="fixed z-10 flex w-full px-20 justify-between items-center p-4 bg-[#800000] text-white">
       <div className="font-futura font-bold">
-        <p>toyourMUSE.id</p>
+        <Link href={"/"}>
+          <p>toyourMUSE.id</p>
+        </Link>
       </div>
       <div className="flex gap-4 font-futura font-extralight">
         <Link href={"/catalogue"}>

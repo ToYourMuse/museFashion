@@ -18,7 +18,7 @@ const futura = localFont({
   src: [
     { path: "../public/fonts/futura-bk-bt-book.ttf", weight: "300" },
     { path: "../public/fonts/futuraLT.ttf", weight: "400" },
-    { path: "../public/fonts/futuramediumbt.ttf", weight: "500" },
+    { path: "../public/fonts/futuramdbt_bold.otf", weight: "500" },
   ],
   variable: "--font-futura",
 });
@@ -35,9 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`antialiased  ${meieScript.variable} ${futura.variable}`}
-      >
+      <body className={`antialiased ${meieScript.variable} ${futura.variable}`}>
         <Navbar />
         {children}
         <Footer />
