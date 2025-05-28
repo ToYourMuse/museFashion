@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased ${meieScript.variable} ${futura.variable}`}>
+      <body className={`flex flex-col w-full antialiased ${meieScript.variable} ${futura.variable}`}>
         <Navbar />
         {children}
         <Footer />

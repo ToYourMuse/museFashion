@@ -5,16 +5,8 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { AiFillStar, AiOutlineArrowLeft } from "react-icons/ai";
-import { BsGlobe, BsArrowRepeat, BsShield, BsLock } from "react-icons/bs";
 import { StructuredText, renderNodeRule } from "react-datocms";
-import {
-  isHeading,
-  isParagraph,
-  isRoot,
-  isList,
-  isListItem,
-  isBlockquote,
-} from "datocms-structured-text-utils";
+import { customRules } from "@/lib/structured-text-rules";
 import { performRequest } from "@/lib/datocms";
 import ReviewCard from "@/components/ReviewCard";
 
@@ -49,106 +41,6 @@ interface Review {
   author: string;
 }
 
-const customRules = [
-  // Heading renderer
-  renderNodeRule(isHeading, ({ node, children, key }) => {
-    const headingClasses = {
-      1: "text-[20px] font-[500] mb-1 text-gray-900",
-      2: "text-xl font-semibold text-gray-800",
-      3: "text-lg font-medium text-gray-700",
-      4: "text-md font-medium text-gray-700",
-      6: "text-base font-medium text-gray-600",
-    };
-
-    const className = headingClasses[node.level as keyof typeof headingClasses];
-
-    switch (node.level) {
-      case 1:
-        return (
-          <h1 key={key} className={className}>
-            {children}
-          </h1>
-        );
-      case 2:
-        return (
-          <h2 key={key} className={className}>
-            {children}
-          </h2>
-        );
-      case 3:
-        return (
-          <h3 key={key} className={className}>
-            {children}
-          </h3>
-        );
-      case 4:
-        return (
-          <h4 key={key} className={className}>
-            {children}
-          </h4>
-        );
-      case 5:
-        return (
-          <h5 key={key} className={className}>
-            {children}
-          </h5>
-        );
-      case 6:
-        return (
-          <h6 key={key} className={className}>
-            {children}
-          </h6>
-        );
-      default:
-        return (
-          <h1 key={key} className={className}>
-            {children}
-          </h1>
-        );
-    }
-  }),
-
-  // Paragraph renderer
-  renderNodeRule(isParagraph, ({ children, key }) => (
-    <p key={key} className="text-[#1e1e1e] font-extralight leading-relaxed">
-      {children}
-    </p>
-  )),
-
-  // List renderer
-  renderNodeRule(isList, ({ node, children, key }) => {
-    if (node.style === "bulleted") {
-      return (
-        <ul key={key} className="mb-4 ml-6 list-disc space-y-2">
-          {children}
-        </ul>
-      );
-    }
-    return (
-      <ol key={key} className="mb-4 ml-6 list-decimal space-y-2">
-        {children}
-      </ol>
-    );
-  }),
-
-  // List item renderer
-  renderNodeRule(isListItem, ({ children, key }) => (
-    <li key={key} className="text-gray-600">
-      {children}
-    </li>
-  )),
-
-  // Blockquote renderer
-  renderNodeRule(isBlockquote, ({ children, key }) => (
-    <blockquote
-      key={key}
-      className="border-l-4 border-gray-300 pl-4 italic text-gray-700 mb-4"
-    >
-      {children}
-    </blockquote>
-  )),
-];
-
 const formatPrice = (price: number) => {
   return `IDR ${price.toLocaleString("id-ID")}.00`;
 };
@@ -164,8 +56,8 @@ const ColorOption = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-8 h-8 rounded-full border-2 p-[2px] ${
-      isSelected ? "border-gray-800 border-2" : "border-gray-300"
+    className={`w-8 h-8 rounded-full p-[2px] ${
+      isSelected ? "border-gray-800 border-1" : "border-0"
     } hover:border-gray-500 transition-colors flex items-center justify-center`}
     title={color.colorName}
   >
@@ -207,6 +99,7 @@ export default function ProductDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
   const [showDescription, setShowDescription] = useState(true);
+  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -238,7 +131,6 @@ export default function ProductDetailPage() {
           }
         `;
 
-        // Use your existing performRequest function with variables in options
         const data = (await performRequest(PRODUCT_QUERY, {
           variables: { slug },
         })) as { product: Product };
@@ -312,6 +204,17 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Functions to handle review navigation
+  const handleReviewPrev = () => {
+    setCurrentReviewIndex((prevIndex) =>
+      prevIndex === 0 ? reviews.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleReviewNext = () => {
+    setCurrentReviewIndex((prevIndex) => (prevIndex + 1) % reviews.length);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -335,23 +238,14 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="pt-28 min-h-screen bg-white font-futura">
-      <div className="flex w-full px-20">
-        {/* Back Button */}
-        {/* <Link 
-          href="/catalogue"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-8"
-        >
-          <AiOutlineArrowLeft className="w-5 h-5" />
-          Back to Catalogue
-        </Link> */}
-
-        <div className="flex flex-col gap-12">
-          <section className="flex w-full flex-row gap-16">
+    <div className="pt-28 flex w-[100vw] min-h-screen bg-white font-futura">
+      <div className="flex w-full md:px-20">
+        <div className="flex w-full flex-col gap-12">
+          <section className="flex w-full flex-col md:flex-row gap-8 md:gap-16">
             {/* Image Gallery */}
-            <div className="flex w-full flex-col gap-4">
+            <div className="px-12 md:px-0 flex w-full flex-col gap-4 border-b border-[#D9D9D9] md:border-0 pb-6 md:pb-0">
               {/* Main Image */}
-              <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative aspect-square flex w-full bg-gray-100 rounded-lg overflow-hidden">
                 <Image
                   src={
                     product.productImage[currentImageIndex]?.image?.url ||
@@ -421,36 +315,42 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Product Details */}
-            <div className="flex flex-col w-full">
+            <div className="flex flex-col w-full px-6 md:px-0">
               {/* Product Name and Price */}
               <div>
-                <h1 className="text-[36px] font-normal text-black mb-2">
+                <h1 className="text-16px md:text-[36px] font-normal text-black mb-2">
                   {product.productName}
                 </h1>
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="text-3xl font-futura font-extrabold">
+                  <span className="text-[18px] md:text-3xl font-futura font-extrabold">
                     {formatPrice(product.price)}
                   </span>
                   <div className="flex items-center border-1 pl-1 pr-2 rounded-full border-gray-200 gap-1">
-                    <AiFillStar className="w-5 h-5 text-yellow-400" />
-                    <span className="text-lg">{product.rating}</span>
+                    <AiFillStar className="w-3 h-3 md:w-5 md:h-5 text-yellow-400" />
+                    <span className="text-[12px] md:text-lg">
+                      {product.rating}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Size and Fit Checker */}
-              <div className="flex items-center gap-4 font-light">
+              <div className="flex items-center text-[14px] md:text-base gap-4 font-light">
                 <span className="">Cek Ukuranmu:</span>
-                <button className="bg-[#800000] text-white px-4 py-1 text-sm  transition-colors">
-                  Check Your Fit
-                </button>
+                <Link
+                  href={`/checkyourfit?product=${product.slug}`}
+                >
+                  <button className="bg-[#800000] text-white px-4 py-2 text-sm  transition-colors">
+                    Check Your Fit
+                  </button>
+                </Link>
               </div>
 
               {/* Color Selection */}
               {product.color.length > 0 && (
-                <div className="mb-4 font-light">
+                <div className="my-4 font-light">
                   <div className="flex items-center gap-1 mb-1">
-                    <span className="">Warna:</span>
+                    <span className="text-[14px] md:text-base">Warna:</span>
                     <span className="">
                       {product.color[selectedColor]?.colorName}
                     </span>
@@ -468,19 +368,19 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <span className="font-extralight">
+              <span className="font-extralight text-[14px] md:text-base">
                 Size: {product.size === "all_size" ? "All Size" : product.size}
               </span>
 
               {/* Buy Button */}
-              <button className="mt-4 w-full px-6 py-2 bg-[#800000] text-white text-xl font-futura font-extralight">
+              <button className="mt-4 w-full px-6 py-2 bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight">
                 Buy It Now
               </button>
 
               {/* Description Section */}
               <div className="pt-6">
                 {showDescription && (
-                  <div className="py-4 border-1 px-4 border-[#d9d9d9] rounded-[8px] leading-relaxed prose prose-gray max-w-none">
+                  <div className="py-4 border-1 px-4 border-[#d9d9d9] rounded-[8px] leading-relaxed prose prose-gray">
                     <StructuredText
                       data={product.description.value}
                       customNodeRules={customRules}
@@ -494,7 +394,7 @@ export default function ProductDetailPage() {
                 {mockFeatures.map((feature, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 text-[#757575]"
+                    className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]"
                   >
                     {feature.icon}
                     <span>{feature.text}</span>
@@ -505,43 +405,111 @@ export default function ProductDetailPage() {
           </section>
 
           {/* reviews */}
-          <section className="flex flex-col w-full">
-            <h1 className="text-[30px] font-bold mb-6">Latest Review</h1>
-            <div className="flex w-full flex-row justify-between gap-16">
-              {reviewsLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <p className="text-gray-500">Loading reviews...</p>
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="flex justify-center items-center h-32">
-                  <p className="text-gray-500">No reviews yet.</p>
-                </div>
-              ) : (
-                reviews
-                  .slice(0, 3)
-                  .map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))
-              )}
+          <section className="flex flex-col w-full px-6 md:px-0">
+            <h1 className="text-[20px] md:text-[30px] font-bold mb-6">
+              Latest Review
+            </h1>
 
-              {reviews.length > 3 && (
-                <button className="w-full py-3 text-center text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  View All Reviews ({reviews.length})
-                </button>
-              )}
-            </div>
+            {reviewsLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <p className="text-gray-500">Loading reviews...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="flex justify-center items-center h-32">
+                <p className="text-gray-500">No reviews yet.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop View */}
+                <div className="hidden md:flex w-full flex-row justify-between gap-16">
+                  {reviews.slice(0, 3).map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))}
+                </div>
+
+                {/* Mobile View - Carousel */}
+                <div className="block md:hidden">
+                  <div className="relative flex flex-row gap-2 items-center">
+                    {/* Left Arrow */}
+                    <button
+                      onClick={handleReviewPrev}
+                      className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                      aria-label="Previous reviews"
+                    >
+                      <Image
+                        src="/assets/previousArrow1.svg"
+                        alt="previous"
+                        width={20}
+                        height={20}
+                        className="object-cover object-bottom"
+                      />
+                    </button>
+
+                    {/* Review Container */}
+                    <div className="flex justify-center flex-1">
+                      <div className="w-full max-w-sm">
+                        <ReviewCard review={reviews[currentReviewIndex]} />
+                      </div>
+                    </div>
+
+                    {/* Right Arrow */}
+                    <button
+                      onClick={handleReviewNext}
+                      className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                      aria-label="Next reviews"
+                    >
+                      <Image
+                        src="/assets/nextArrow1.svg"
+                        alt="next"
+                        width={20}
+                        height={20}
+                        className="object-cover object-bottom"
+                      />
+                    </button>
+                  </div>
+
+                  {/* Review indicators for mobile */}
+                  <div className="flex justify-center mt-4 gap-2">
+                    {reviews.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentReviewIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index === currentReviewIndex
+                            ? "bg-gray-800"
+                            : "bg-gray-300"
+                        }`}
+                        aria-label={`Go to review ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* View All Reviews Button */}
+                {reviews.length > 3 && (
+                  <button className="w-full py-3 mt-6 text-center text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    View All Reviews ({reviews.length})
+                  </button>
+                )}
+              </>
+            )}
           </section>
+
           {/* email */}
           <section className="flex w-full flex-col items-center mb-12">
-            <h1 className="text-[30px] font-bold">Follow the latest trends</h1>
-            <p className="text-[20px] font-light">with our daily newsletter</p>
+            <h1 className="text-[20px] md:text-[30px] font-bold">
+              Follow the latest trends
+            </h1>
+            <p className="text-[12px] md:text-[20px] font-light">
+              with our daily newsletter
+            </p>
             <form className="flex flex-row gap-4 mt-4">
               <input
                 type="email"
                 placeholder="your@example.com"
-                className="px-4 py-2 border border-[#999999] focus:outline-none focus:ring-2 focus:ring-[#800000] focus:border-transparent placeholder:text-center"
+                className="px-4 py-2 border border-[#999999] focus:outline-none focus:ring-2 text-[12px] md:text-base focus:ring-[#800000] focus:border-transparent placeholder:text-center"
               />
-              <button className="px-6 py-2 bg-[#800000] text-white">
+              <button className="px-6 py-2 bg-[#800000] text-white text-[12px] md:text-base">
                 Submit
               </button>
             </form>
