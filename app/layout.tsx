@@ -4,8 +4,8 @@ import { Meie_Script } from "next/font/google";
 import localFont from "next/font/local";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Load Meie Script font from Google
 const meieScript = Meie_Script({
@@ -27,7 +27,25 @@ const futura = localFont({
 
 export const metadata: Metadata = {
   title: "Muse",
-  description: "Muse",
+  description: "Muse - Fashion & Style",
+  openGraph: {
+    title: "Muse",
+    description: "Muse - Fashion & Style",
+    images: [
+      {
+        url: "/logoheader.png",
+        width: 1200,
+        height: 630,
+        alt: "Muse Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Muse",
+    description: "Muse - Fashion & Style",
+    images: ["/logoheader.png"],
+  },
 };
 
 export default function RootLayout({
@@ -37,7 +55,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`flex flex-col w-full antialiased ${meieScript.variable} ${futura.variable}`}>
+      <body
+        className={`flex flex-col w-full antialiased ${meieScript.variable} ${futura.variable}`}
+      >
         <Navbar />
         {children}
         <Footer />

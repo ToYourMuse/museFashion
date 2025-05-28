@@ -104,16 +104,16 @@ export default function ProductDetailPage() {
   const [showDescription, setShowDescription] = useState(true);
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
-  const handleBuyProduct = () => {
-    toast.success("Thank you for purchasing this product!", {
-      position: "top-center",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
-  };
+  // const handleBuyProduct = () => {
+  //   toast.success("Thank you for purchasing this product!", {
+  //     position: "top-center",
+  //     autoClose: 5000,
+  //     hideProgressBar: false,
+  //     closeOnClick: true,
+  //     pauseOnHover: true,
+  //     draggable: true,
+  //   });
+  // };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -389,7 +389,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center text-[14px] md:text-base gap-4 font-light">
                 <span className="">Cek Ukuranmu:</span>
                 <Link href={`/checkyourfit?product=${product.slug}`}>
-                  <button className="bg-[#800000] text-white px-4 py-2 text-sm  transition-colors">
+                  <button className="bg-[#800000] hover:cursor-pointer text-white px-4 py-2 text-sm  transition-colors">
                     Check Your Fit
                   </button>
                 </Link>
@@ -423,8 +423,7 @@ export default function ProductDetailPage() {
 
               {/* Buy Button */}
               <button
-                onClick={handleBuyProduct}
-                className="mt-4 w-full px-6 py-2 bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight hover:bg-red-900 transition-colors"
+                className="mt-4 w-full px-6 py-2 hover:cursor-pointer bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight hover:bg-red-900 transition-colors"
               >
                 Buy It Now
               </button>
@@ -534,7 +533,7 @@ export default function ProductDetailPage() {
                     {/* Left Arrow */}
                     <button
                       onClick={handleReviewPrev}
-                      className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                      className="z-10 p-2 hover:cursor-pointer text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
                       aria-label="Previous reviews"
                     >
                       <Image
@@ -556,7 +555,7 @@ export default function ProductDetailPage() {
                     {/* Right Arrow */}
                     <button
                       onClick={handleReviewNext}
-                      className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                      className="z-10 p-2 hover:cursor-pointer text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
                       aria-label="Next reviews"
                     >
                       <Image

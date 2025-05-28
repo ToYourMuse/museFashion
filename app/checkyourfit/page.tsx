@@ -22,6 +22,7 @@ interface Product {
 }
 
 interface DefaultFit {
+  defaultProduct: string;
   image1: {
     url: string;
   };
@@ -48,7 +49,9 @@ interface CheckFitPageData {
   checkFitPage: {
     title: string;
     button: string;
-    whatsappLink: string;
+    whatsappTop: string;
+    whatsappBottom: string;
+    phoneNumber: number;
   };
 }
 
@@ -69,10 +72,54 @@ const SizeChecker: React.FC = () => {
   const [showNoMatch, setShowNoMatch] = useState<boolean>(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [defaultFit, setDefaultFit] = useState<DefaultFit | null>(null);
-  const [checkFitPageData, setCheckFitPageData] = useState<CheckFitPageData | null>(null);
+  const [checkFitPageData, setCheckFitPageData] =
+    useState<CheckFitPageData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
+
+  // Function to check if inputs are valid for enabling button
+  const isFormValid = () => {
+    return (
+      height.trim() !== "" &&
+      weight.trim() !== "" &&
+      !isNaN(Number(height)) &&
+      !isNaN(Number(weight)) &&
+      Number(height) > 0 &&
+      Number(weight) > 0
+    );
+  };
+
+  // Function to generate WhatsApp message
+  const generateWhatsAppMessage = () => {
+    const productName = product?.productName || defaultFit?.defaultProduct;
+    const heightValue = height || "[tidak diisi]";
+    const weightValue = weight || "[tidak diisi]";
+
+    // Use content from DatoCMS with hardcoded product name and measurements
+    const whatsappTop = checkFitPageData?.checkFitPage?.whatsappTop || "";
+    const whatsappBottom = checkFitPageData?.checkFitPage?.whatsappBottom || "";
+    
+    const message = `${whatsappTop}
+    
+- Nama Produk: ${productName}
+- Tinggi badan: ${heightValue} cm  
+- Berat badan: ${weightValue} kg  
+
+${whatsappBottom}`;
+
+    return encodeURIComponent(message);
+  };
+
+  // Function to handle WhatsApp redirect
+  const handleWhatsAppRedirect = () => {
+    // Use phone number from DatoCMS
+    const phoneNumber = checkFitPageData?.checkFitPage?.phoneNumber || "6289602446618";
+    const message = generateWhatsAppMessage();
+    const whatsappURL = `https://wa.me/${phoneNumber}?text=${message}`;
+
+    window.open(whatsappURL, "_blank");
+  };
 
   // Convert default fit data to SizeModel format
   const convertDefaultFitToModels = (defaultFit: DefaultFit): SizeModel[] => {
@@ -134,15 +181,21 @@ const SizeChecker: React.FC = () => {
             checkFitPage {
               title
               button
-              whatsappLink
+              whatsappTop
+              whatsappBottom
+              phoneNumber
             }
           }
         `;
 
         const checkFitPageResponse = await performRequest(CHECK_FIT_PAGE_QUERY);
         console.log("Fetched check fit page data:", checkFitPageResponse);
-        
-        if (checkFitPageResponse && typeof checkFitPageResponse === "object" && "checkFitPage" in checkFitPageResponse) {
+
+        if (
+          checkFitPageResponse &&
+          typeof checkFitPageResponse === "object" &&
+          "checkFitPage" in checkFitPageResponse
+        ) {
           setCheckFitPageData(checkFitPageResponse as CheckFitPageData);
         }
 
@@ -180,6 +233,7 @@ const SizeChecker: React.FC = () => {
           const DEFAULT_FIT_QUERY = `
             query DefaultFit {
               defaultfit {
+                defaultProduct
                 image1 {
                   url
                 }
@@ -229,12 +283,24 @@ const SizeChecker: React.FC = () => {
     const heightNum = parseInt(height);
     const weightNum = parseInt(weight);
 
-    // Define all size range (adjust these ranges as needed)
+    // Check if height and weight fit any of the 4 conditions
     const isAllSize =
-      heightNum >= 150 &&
-      heightNum <= 180 &&
-      weightNum >= 40 &&
-      weightNum <= 65;
+      (heightNum >= 150 &&
+        heightNum <= 155 &&
+        weightNum >= 40 &&
+        weightNum <= 50) ||
+      (heightNum >= 156 &&
+        heightNum <= 165 &&
+        weightNum >= 54 &&
+        weightNum <= 60) ||
+      (heightNum >= 166 &&
+        heightNum <= 175 &&
+        weightNum >= 48 &&
+        weightNum <= 63) ||
+      (heightNum >= 176 &&
+        heightNum <= 180 &&
+        weightNum >= 50 &&
+        weightNum <= 65);
 
     if (isAllSize) {
       setShowRecommendation(true);
@@ -329,7 +395,12 @@ const SizeChecker: React.FC = () => {
 
             <button
               onClick={checkSize}
-              className="w-fit bg-[#800000] text-white py-3 px-6 font-light text-base hover:bg-red-900 transition-colors"
+              disabled={!isFormValid()}
+              className={`w-fit py-3 px-6 font-light text-base transition-colors ${
+                isFormValid()
+                  ? "bg-[#800000] text-white hover:bg-red-900 cursor-pointer"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               {checkFitPageData?.checkFitPage?.button || "Check It Out!"}
             </button>
@@ -398,23 +469,12 @@ const SizeChecker: React.FC = () => {
                 options.
               </p>
               <div className="space-y-3">
-                {checkFitPageData?.checkFitPage?.whatsappLink ? (
-                  <a
-                    href={checkFitPageData.checkFitPage.whatsappLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
-                  >
-                    Get Personalized Help
-                  </a>
-                ) : (
-                  <Link
-                    href="/catalogue"
-                    className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
-                  >
-                    Get Personalized Help
-                  </Link>
-                )}
+                <button
+                  onClick={handleWhatsAppRedirect}
+                  className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
+                >
+                  Get Personalized Help
+                </button>
               </div>
             </div>
           )}
@@ -456,7 +516,7 @@ const SizeChecker: React.FC = () => {
                   {/* Left Arrow */}
                   <button
                     onClick={handleModelPrev}
-                    className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                    className="z-10 p-2 hover:cursor-pointer text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
                     aria-label="Previous model"
                   >
                     <Image
@@ -489,8 +549,7 @@ const SizeChecker: React.FC = () => {
                   {/* Right Arrow */}
                   <button
                     onClick={handleModelNext}
-                    className="z-10 p-2 text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
-                    aria-label="Next model"
+                    className="z-10 p-2 hover:cursor-pointer text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
                   >
                     <Image
                       src="/assets/nextArrow1.svg"

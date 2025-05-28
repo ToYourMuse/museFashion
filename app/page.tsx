@@ -268,7 +268,9 @@ export default function Home() {
       {/* Hero Section */}
       <section
         className="relative flex w-full h-[60vh] md:h-screen bg-cover bg-right md:bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('${homeData.homePage.heroSection.image.url}')` }}
+        style={{
+          backgroundImage: `url('${homeData.homePage.heroSection.image.url}')`,
+        }}
       >
         <div className="absolute bottom-6 left-6  md:bottom-20 md:left-20 flex flex-col text-white">
           <h1 className="text-[30px] -ml-4 md:-ml-10 font-meie-script md:text-6xl md:mb-4">
@@ -277,14 +279,16 @@ export default function Home() {
           <p className="text-base md:text-xl max-w-1/2 font-extralight">
             {homeData.homePage.heroSection.desc}
           </p>
-          <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
-            {homeData.homePage.heroSection.button}
-          </button>
+          <Link href="/#explore">
+            <button className="mt-4 hover:cursor-pointer w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
+              {homeData.homePage.heroSection.button}
+            </button>
+          </Link>
         </div>
       </section>
 
       {/* Explore section */}
-      <section className="py-6 md:py-20 px-8 flex flex-col w-full h-full bg-white">
+      <section id="explore" className="py-6 md:py-20 px-8 flex flex-col w-full h-full bg-white">
         <div className="max-w-7xl mx-auto text-center">
           {/* Heading and subtitle */}
           <h2 className="text-[24px] md:text-[46px] font-futura font-normal mb-4">
@@ -310,7 +314,7 @@ export default function Home() {
           {/* Left Arrow */}
           <button
             onClick={handlePrev}
-            className="absolute left-0  top-3/7 md:top-1/2 -translate-y-1/2 z-10 p-2 text-[#800000] hover:text-[#600000] transition-colors"
+            className="absolute left-0 hover:cursor-pointer  top-3/7 md:top-1/2 -translate-y-1/2 z-10 p-2 text-[#800000] hover:text-[#600000] transition-colors"
             aria-label="Previous products"
           >
             <Image
@@ -351,7 +355,7 @@ export default function Home() {
           {/* Right Arrow */}
           <button
             onClick={handleNext}
-            className="absolute right-0 top-3/7 md:top-1/2 -translate-y-1/2 z-10 p-2 text-[#800000] hover:text-[#600000] transition-colors"
+            className="absolute hover:cursor-pointer right-0 top-3/7 md:top-1/2 -translate-y-1/2 z-10 p-2 text-[#800000] hover:text-[#600000] transition-colors"
             aria-label="Next products"
           >
             <Image
@@ -369,7 +373,9 @@ export default function Home() {
       <section className="h-fit pt-10 w-full bg-[#800000] text-white flex items-center justify-center">
         <div
           className="py-12 px-6 flex gap-4 md:gap-0 flex-row md:flex-col w-full items-center justify-between md:justify-center h-full bg-cover bg-center"
-          style={{ backgroundImage: `url('${homeData.homePage.voucher.image.url}')` }}
+          style={{
+            backgroundImage: `url('${homeData.homePage.voucher.image.url}')`,
+          }}
         >
           <div className="flex flex-col items-start md:items-center">
             <h1 className="font-futura font-bold text-[24px] md:text-5xl">
@@ -381,7 +387,7 @@ export default function Home() {
           </div>
           <button
             onClick={handleGetVoucher}
-            className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight"
+            className="mt-4 w-fit px-2 md:px-6 hover:cursor-pointer py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight"
           >
             {homeData.homePage.voucher.button}
           </button>
@@ -411,7 +417,7 @@ export default function Home() {
             {homeData.homePage.fitSection.subdesc}
           </p>
           <Link href="/checkyourfit">
-            <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
+            <button className="mt-4 w-fit px-2 md:px-6 py-2 hover:cursor-pointer bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
               {homeData.homePage.fitSection.button}
             </button>
           </Link>
@@ -472,7 +478,7 @@ export default function Home() {
                   {/* Left Arrow */}
                   <button
                     onClick={handleReviewPrev}
-                    className="z-10 p-2 text-white hover:text-gray-300 transition-colors"
+                    className="z-10 p-2 hover:cursor-pointer text-white hover:text-gray-300 transition-colors"
                     aria-label="Previous reviews"
                   >
                     <Image
@@ -505,7 +511,7 @@ export default function Home() {
                   {/* Right Arrow */}
                   <button
                     onClick={handleReviewNext}
-                    className="z-10 p-2 text-white hover:text-gray-300 transition-colors"
+                    className="z-10 p-2 hover:cursor-pointer text-white hover:text-gray-300 transition-colors"
                     aria-label="Next reviews"
                   >
                     <Image

@@ -53,7 +53,7 @@ export default function NewsletterForm({
         <button
           type="submit"
           disabled={loading || !email.trim()}
-          className="px-6 py-2 bg-[#800000] text-white text-[12px] md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-900 transition-colors"
+          className="px-6 py-2 bg-[#800000] hover:cursor-pointer text-white text-[12px] md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-900 transition-colors"
         >
           {loading ? "Sending..." : `${buttonText}`}
         </button>

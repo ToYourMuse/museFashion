@@ -253,7 +253,7 @@ export default function Page() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-[#800000] text-base md:text-[20px] text-white py-2 font-light px-6 transition-colors duration-200 tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-900"
+                  className="w-full bg-[#800000] hover:cursor-pointer text-base md:text-[20px] text-white py-2 font-light px-6 transition-colors duration-200 tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-900"
                 >
                   {submitting ? 'Sending...' : 'Submit'}
                 </button>
