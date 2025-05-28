@@ -1,19 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  
-  /* Ensure font variables have fallback values */
-  --font-futura: 'Futura', sans-serif;
-  --font-meie-script: 'Meie Script', cursive;
+@theme {
+  --font-futura: Furura, sans-serif;
+  --font-meie-script: Meie Script, sans-serif;
 }
 
-/* Define explicit CSS classes for font usage */
-.font-futura {
-  font-family: var(--font-futura);
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.font-meie-script {
-  font-family: var(--font-meie-script);
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }
+
+/* Custom Radio Button Styles */
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid #000000;
+  border-radius: 50%;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="radio"]:checked {
+  background-color: #000000;
+  border-color: #000000;
+}
+
