@@ -38,6 +38,12 @@ interface FilterState {
   maxPrice: number;
 }
 
+interface CataloguePageData {
+  cataloguePage: {
+    title: string;
+  };
+}
+
 const formatPrice = (price: number) => {
   return `IDR ${price.toLocaleString("id-ID")}.00`;
 };
@@ -157,7 +163,9 @@ const CheckboxOption = ({
 export default function CataloguePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
+  const [cataloguePageData, setCataloguePageData] = useState<CataloguePageData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pageDataLoading, setPageDataLoading] = useState(true);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [availableColors, setAvailableColors] = useState<
     { name: string; hex: string }[]
@@ -183,6 +191,34 @@ export default function CataloguePage() {
   const closeFilterSidebar = () => {
     setIsFilterSidebarOpen(false);
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch catalogue page data
+        const CATALOGUE_PAGE_QUERY = `
+          query CataloguePage {
+            cataloguePage {
+              title
+            }
+          }
+        `;
+
+        const cataloguePageResponse = await performRequest(CATALOGUE_PAGE_QUERY);
+        console.log("Fetched catalogue page data:", cataloguePageResponse);
+        
+        if (cataloguePageResponse && typeof cataloguePageResponse === "object" && "cataloguePage" in cataloguePageResponse) {
+          setCataloguePageData(cataloguePageResponse as CataloguePageData);
+        }
+      } catch (error) {
+        console.error("Error fetching catalogue page data:", error);
+      } finally {
+        setPageDataLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -499,7 +535,10 @@ export default function CataloguePage() {
           <div className="flex flex-col md:flex-row w-full items-center justify-between mb-4 md:mb-8">
             <div className="flex flex-row w-full justify-between items-center">
               <h1 className="text-[24px] md:text-4xl font-futura font-bold text-black">
-                Your Daily Muse
+                {pageDataLoading 
+                  ? "Loading..." 
+                  : cataloguePageData?.cataloguePage?.title || "Your Daily Muse"
+                }
               </h1>
               <button 
                 onClick={toggleFilterSidebar}

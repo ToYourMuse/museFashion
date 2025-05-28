@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -11,6 +13,21 @@ const Navbar = () => {
 
   const closeSidebar = () => {
     setIsSidebarOpen(false);
+  };
+
+  const isActive = (path: string) => {
+    if (path === "/catalogue") {
+      return pathname === "/catalogue" || pathname.startsWith("/catalogue/");
+    }
+    if (path === "/checkyourfit") {
+      return (
+        pathname === "/checkyourfit" || pathname.startsWith("/checkyourfit")
+      );
+    }
+    if (path === "/about") {
+      return pathname === "/about" || pathname.startsWith("/about");
+    }
+    return pathname === path;
   };
 
   return (
@@ -24,13 +41,33 @@ const Navbar = () => {
         </div>
         <div className="flex gap-4 font-futura font-extralight">
           <Link href={"/catalogue"}>
-            <p>Catalogue</p>
+            <p
+              className={`${
+                isActive("/catalogue") ? "border-b border-[#E6AF2D] pb-1" : ""
+              } hover:opacity-80 transition-opacity`}
+            >
+              Catalogue
+            </p>
           </Link>
           <Link href={"/checkyourfit"}>
-            <p>Check Your Fit</p>
+            <p
+              className={`${
+                isActive("/checkyourfit")
+                  ? "border-b border-[#E6AF2D] pb-1"
+                  : ""
+              } hover:opacity-80 transition-opacity`}
+            >
+              Check Your Fit
+            </p>
           </Link>
           <Link href={"/about"}>
-            <p>About Us</p>
+            <p
+              className={`${
+                isActive("/about") ? "border-b border-[#E6AF2D] pb-1" : ""
+              } hover:opacity-80 transition-opacity`}
+            >
+              About Us
+            </p>
           </Link>
         </div>
       </div>
@@ -49,9 +86,21 @@ const Navbar = () => {
         >
           {/* Hamburger Menu Icon */}
           <div className="w-6 h-6 flex flex-col justify-center items-center">
-            <span className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isSidebarOpen ? 'rotate-45 translate-y-1' : '-translate-y-0.5'}`}></span>
-            <span className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm my-0.5 ${isSidebarOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-            <span className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isSidebarOpen ? '-rotate-45 -translate-y-1' : 'translate-y-0.5'}`}></span>
+            <span
+              className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${
+                isSidebarOpen ? "rotate-45 translate-y-1" : "-translate-y-0.5"
+              }`}
+            ></span>
+            <span
+              className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm my-0.5 ${
+                isSidebarOpen ? "opacity-0" : "opacity-100"
+              }`}
+            ></span>
+            <span
+              className={`bg-white block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${
+                isSidebarOpen ? "-rotate-45 -translate-y-1" : "translate-y-0.5"
+              }`}
+            ></span>
           </div>
         </button>
       </div>
@@ -65,7 +114,11 @@ const Navbar = () => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed top-0 right-0 h-full w-60 bg-[#800000] text-white transform ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out z-40 md:hidden`}>
+      <div
+        className={`fixed top-0 right-0 h-full w-60 bg-[#800000] text-white transform ${
+          isSidebarOpen ? "translate-x-0" : "translate-x-full"
+        } transition-transform duration-300 ease-in-out z-40 md:hidden`}
+      >
         <div className="p-6">
           {/* Header with close button */}
           <div className="flex justify-between items-center mb-8">
@@ -79,29 +132,51 @@ const Navbar = () => {
               className="p-2 focus:outline-none"
               aria-label="Close menu"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           {/* Navigation Links */}
           <nav className="space-y-8 flex flex-col w-fit">
-            <div className="border-b w-full border-[#E6AF2D] pb-2">
+            <div
+              className={`w-full pb-2 ${
+                isActive("/catalogue") ? "border-b border-[#E6AF2D]" : ""
+              }`}
+            >
               <Link href={"/catalogue"} onClick={closeSidebar}>
                 <p className="font-futura font-light text-lg hover:opacity-80 transition-opacity">
                   Catalogue
                 </p>
               </Link>
             </div>
-            <div className="w-fit">
+            <div
+              className={`w-fit pb-2 ${
+                isActive("/checkyourfit") ? "border-b border-[#E6AF2D]" : ""
+              }`}
+            >
               <Link href={"/checkyourfit"} onClick={closeSidebar}>
                 <p className="font-futura font-light text-lg hover:opacity-80 transition-opacity">
                   Check Your Fit
                 </p>
               </Link>
             </div>
-            <div className="w-full">
+            <div
+              className={`w-full pb-2 ${
+                isActive("/about") ? "border-b border-[#E6AF2D]" : ""
+              }`}
+            >
               <Link href={"/about"} onClick={closeSidebar}>
                 <p className="font-futura font-light text-lg hover:opacity-80 transition-opacity">
                   About Us

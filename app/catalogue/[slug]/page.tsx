@@ -8,7 +8,9 @@ import { AiFillStar, AiOutlineArrowLeft } from "react-icons/ai";
 import { StructuredText, renderNodeRule } from "react-datocms";
 import { customRules } from "@/lib/structured-text-rules";
 import { performRequest } from "@/lib/datocms";
+import NewsletterForm from "@/components/NewsletterForm";
 import ReviewCard from "@/components/ReviewCard";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -41,6 +43,23 @@ interface Review {
   author: string;
 }
 
+interface Feature {
+  id: string;
+  image: {
+    url: string;
+  };
+  text: string;
+}
+
+interface ProductPageData {
+  productPage: {
+    feature: Feature[];
+    emailTitle: string;
+    emailSubtitle: string;
+    emailButton: string;
+  };
+}
+
 const formatPrice = (price: number) => {
   return `IDR ${price.toLocaleString("id-ID")}.00`;
 };
@@ -68,38 +87,33 @@ const ColorOption = ({
   </button>
 );
 
-const mockFeatures = [
-  {
-    icon: <Image src="/assets/check.svg" alt="Check" width={20} height={20} />,
-    text: "Fast worldwide shipping",
-  },
-  {
-    icon: <Image src="/assets/car.svg" alt="Check" width={20} height={20} />,
-    text: "Free returns",
-  },
-  {
-    icon: <Image src="/assets/leaf.svg" alt="Check" width={20} height={20} />,
-    text: "Sustainably made",
-  },
-  {
-    icon: <Image src="/assets/lock.svg" alt="Check" width={15} height={15} />,
-    text: "Secure Payments",
-  },
-];
-
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [productPageData, setProductPageData] =
+    useState<ProductPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [pageDataLoading, setPageDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
   const [showDescription, setShowDescription] = useState(true);
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+
+  const handleBuyProduct = () => {
+    toast.success("Thank you for purchasing this product!", {
+      position: "top-center",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -186,6 +200,43 @@ export default function ProductDetailPage() {
     };
 
     fetchReviews();
+  }, []);
+
+  useEffect(() => {
+    const fetchProductPageData = async () => {
+      try {
+        const PRODUCT_PAGE_QUERY = `
+          query ProductPage {
+            productPage {
+              feature {
+                id
+                image {
+                  url
+                }
+                text
+              }
+              emailTitle
+              emailSubtitle
+              emailButton
+            }
+          }
+        `;
+
+        const data = await performRequest(PRODUCT_PAGE_QUERY);
+        console.log("Fetched product page data:", data);
+        if (data && typeof data === "object" && "productPage" in data) {
+          setProductPageData(data as ProductPageData);
+        } else {
+          console.error("Unexpected product page data structure:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching product page data:", error);
+      } finally {
+        setPageDataLoading(false);
+      }
+    };
+
+    fetchProductPageData();
   }, []);
 
   const nextImage = () => {
@@ -279,7 +330,7 @@ export default function ProductDetailPage() {
                       <div className="w-12 h-12 flex items-center justify-center">
                         <Image
                           src="/assets/nextArrow.svg"
-                          alt="Previous"
+                          alt="Next"
                           width={24}
                           height={24}
                         />
@@ -337,9 +388,7 @@ export default function ProductDetailPage() {
               {/* Size and Fit Checker */}
               <div className="flex items-center text-[14px] md:text-base gap-4 font-light">
                 <span className="">Cek Ukuranmu:</span>
-                <Link
-                  href={`/checkyourfit?product=${product.slug}`}
-                >
+                <Link href={`/checkyourfit?product=${product.slug}`}>
                   <button className="bg-[#800000] text-white px-4 py-2 text-sm  transition-colors">
                     Check Your Fit
                   </button>
@@ -373,7 +422,10 @@ export default function ProductDetailPage() {
               </span>
 
               {/* Buy Button */}
-              <button className="mt-4 w-full px-6 py-2 bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight">
+              <button
+                onClick={handleBuyProduct}
+                className="mt-4 w-full px-6 py-2 bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight hover:bg-red-900 transition-colors"
+              >
                 Buy It Now
               </button>
 
@@ -391,15 +443,64 @@ export default function ProductDetailPage() {
 
               {/* Features */}
               <div className="space-y-4 pt-6">
-                {mockFeatures.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]"
-                  >
-                    {feature.icon}
-                    <span>{feature.text}</span>
-                  </div>
-                ))}
+                {pageDataLoading ? (
+                  <p className="text-gray-500 text-sm">Loading features...</p>
+                ) : productPageData?.productPage?.feature ? (
+                  productPageData.productPage.feature.map((feature) => (
+                    <div
+                      key={feature.id}
+                      className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]"
+                    >
+                      <Image
+                        src={feature.image.url}
+                        alt={feature.text}
+                        width={20}
+                        height={20}
+                      />
+                      <span>{feature.text}</span>
+                    </div>
+                  ))
+                ) : (
+                  // Fallback to default features if no data from CMS
+                  <>
+                    <div className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]">
+                      <Image
+                        src="/assets/check.svg"
+                        alt="Check"
+                        width={20}
+                        height={20}
+                      />
+                      <span>Fast worldwide shipping</span>
+                    </div>
+                    <div className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]">
+                      <Image
+                        src="/assets/car.svg"
+                        alt="Check"
+                        width={20}
+                        height={20}
+                      />
+                      <span>Free returns</span>
+                    </div>
+                    <div className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]">
+                      <Image
+                        src="/assets/leaf.svg"
+                        alt="Check"
+                        width={20}
+                        height={20}
+                      />
+                      <span>Sustainably made</span>
+                    </div>
+                    <div className="flex items-center text-[14px] md:text-base gap-3 text-[#757575]">
+                      <Image
+                        src="/assets/lock.svg"
+                        alt="Check"
+                        width={15}
+                        height={15}
+                      />
+                      <span>Secure Payments</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </section>
@@ -495,24 +596,19 @@ export default function ProductDetailPage() {
             )}
           </section>
 
-          {/* email */}
+          {/* Email/Newsletter Section */}
           <section className="flex w-full flex-col items-center mb-12">
-            <h1 className="text-[20px] md:text-[30px] font-bold">
-              Follow the latest trends
-            </h1>
-            <p className="text-[12px] md:text-[20px] font-light">
-              with our daily newsletter
-            </p>
-            <form className="flex flex-row gap-4 mt-4">
-              <input
-                type="email"
-                placeholder="your@example.com"
-                className="px-4 py-2 border border-[#999999] focus:outline-none focus:ring-2 text-[12px] md:text-base focus:ring-[#800000] focus:border-transparent placeholder:text-center"
+            {pageDataLoading ? (
+              <p className="text-gray-500">Loading newsletter section...</p>
+            ) : productPageData?.productPage ? (
+              <NewsletterForm
+                title={productPageData.productPage.emailTitle}
+                subtitle={productPageData.productPage.emailSubtitle}
+                buttonText={productPageData.productPage.emailButton}
               />
-              <button className="px-6 py-2 bg-[#800000] text-white text-[12px] md:text-base">
-                Submit
-              </button>
-            </form>
+            ) : (
+              <NewsletterForm />
+            )}
           </section>
         </div>
       </div>

@@ -4,13 +4,49 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { performRequest } from "@/lib/datocms";
 import { MdOutlineStar, MdOutlineStarOutline } from "react-icons/md";
+import { toast } from "react-toastify";
 
 // Define the product type
-interface Product {
+interface ExploreModel {
   id: string;
-  name: string;
-  imageUrl: string;
-  href: string;
+  image: {
+    url: string;
+  };
+  productName: string;
+}
+
+interface HomePageData {
+  homePage: {
+    heroSection: {
+      title: string;
+      desc: string;
+      button: string;
+      image: {
+        url: string;
+      };
+    };
+    exploreSection: {
+      title: string;
+      description: string;
+      button: string;
+      exploreModel: ExploreModel[];
+    };
+    voucher: {
+      title: string;
+      subtitle: string;
+      button: string;
+      image: {
+        url: string;
+      };
+    };
+    fitSection: {
+      title: string;
+      description: string;
+      subdesc: string;
+      button: string;
+    };
+    reviewTitle: string;
+  };
 }
 
 interface Review {
@@ -21,45 +57,11 @@ interface Review {
   author: string;
 }
 
-// Sample product data
-const fashionProducts: Product[] = [
-  {
-    id: "1",
-    name: "Ivory Knit Ensemble",
-    imageUrl: "/models/model1.png",
-    href: "/products/ivory-knit-ensemble",
-  },
-  {
-    id: "2",
-    name: "Taupe Oversized Coat",
-    imageUrl: "/models/model2.png",
-    href: "/products/taupe-oversized-coat",
-  },
-  {
-    id: "3",
-    name: "White Linen Suit",
-    imageUrl: "/models/model3.png",
-    href: "/products/white-linen-suit",
-  },
-  {
-    id: "4",
-    name: "Beige Summer Dress",
-    imageUrl: "/models/model1.png",
-    href: "/products/beige-summer-dress",
-  },
-  {
-    id: "5",
-    name: "Camel Wool Jacket",
-    imageUrl: "/models/model2.png",
-    href: "/products/camel-wool-jacket",
-  },
-];
-
 const StarRating = ({ rating }: { rating: number }) => {
   return (
     <div className="flex">
       {[...Array(5)].map((_, i) => (
-        <span key={i} className="text-2xl text-[#FFCC00]">
+        <span key={i} className="text-lg md:text-2xl text-[#FFCC00]">
           {i < rating ? (
             <MdOutlineStar className="" />
           ) : (
@@ -75,14 +77,68 @@ export default function Home() {
   // Add state to track current position in carousel
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [homeData, setHomeData] = useState<HomePageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [productsPerPage, setProductsPerPage] = useState(3);
   const [reviewsPerPage, setReviewsPerPage] = useState(3);
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
 
+  const handleGetVoucher = () => {
+    toast.success("Congrats, Voucher Claimed!", {
+      position: "top-center",
+      autoClose: 6000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+  };
+
   useEffect(() => {
-    const fetchReviews = async () => {
+    const fetchData = async () => {
       try {
+        const HOME_QUERY = `
+          query Home {
+            homePage {
+              heroSection {
+                title
+                desc
+                button
+                image {
+                  url
+                }
+              }
+              exploreSection {
+                title
+                description
+                button
+                exploreModel {
+                  id
+                  image {
+                    url
+                  }
+                  productName
+                }
+              }
+              voucher {
+                title
+                subtitle
+                button
+                image {
+                  url
+                }
+              }
+              fitSection {
+                title
+                description
+                subdesc
+                button
+              }
+              reviewTitle
+            }
+          }
+        `;
+
         const REVIEWS_QUERY = `
           query Review {
             allReviews {
@@ -95,22 +151,42 @@ export default function Home() {
           }
         `;
 
-        const data = await performRequest(REVIEWS_QUERY);
-        console.log("Fetched reviews:", data);
-        if (data && typeof data === "object" && "allReviews" in data) {
-          setReviews(data.allReviews as Review[]);
+        const [homeResponse, reviewsResponse] = await Promise.all([
+          performRequest(HOME_QUERY),
+          performRequest(REVIEWS_QUERY),
+        ]);
+
+        console.log("Fetched home data:", homeResponse);
+        console.log("Fetched reviews:", reviewsResponse);
+
+        if (
+          homeResponse &&
+          typeof homeResponse === "object" &&
+          "homePage" in homeResponse
+        ) {
+          setHomeData(homeResponse as HomePageData);
         } else {
-          console.error("Unexpected data structure:", data);
+          console.error("Unexpected home data structure:", homeResponse);
+        }
+
+        if (
+          reviewsResponse &&
+          typeof reviewsResponse === "object" &&
+          "allReviews" in reviewsResponse
+        ) {
+          setReviews(reviewsResponse.allReviews as Review[]);
+        } else {
+          console.error("Unexpected reviews data structure:", reviewsResponse);
           setReviews([]);
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReviews();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -129,22 +205,26 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const exploreModels = homeData?.homePage?.exploreSection?.exploreModel || [];
+
   // Calculate the visible products
   const visibleProducts = [];
-  for (let i = 0; i < productsPerPage; i++) {
-    const index = (currentIndex + i) % fashionProducts.length;
-    visibleProducts.push(fashionProducts[index]);
+  if (exploreModels.length > 0) {
+    for (let i = 0; i < productsPerPage; i++) {
+      const index = (currentIndex + i) % exploreModels.length;
+      visibleProducts.push(exploreModels[index]);
+    }
   }
 
   // Functions to handle navigation
   const handlePrev = () => {
     setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? fashionProducts.length - 1 : prevIndex - 1
+      prevIndex === 0 ? exploreModels.length - 1 : prevIndex - 1
     );
   };
 
   const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % fashionProducts.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % exploreModels.length);
   };
 
   // Calculate the visible reviews
@@ -167,23 +247,38 @@ export default function Home() {
     setCurrentReviewIndex((prevIndex) => (prevIndex + 1) % reviews.length);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white font-futura flex items-center justify-center">
+        <div className="text-black">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!homeData) {
+    return (
+      <div className="min-h-screen bg-white font-futura flex items-center justify-center">
+        <div className="text-black">Unable to load content</div>
+      </div>
+    );
+  }
+
   return (
     <main className="items-center justify-items-center min-h-screen font-futura">
       {/* Hero Section */}
       <section
         className="relative flex w-full h-[60vh] md:h-screen bg-cover bg-right md:bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/hero.png')" }}
+        style={{ backgroundImage: `url('${homeData.homePage.heroSection.image.url}')` }}
       >
         <div className="absolute bottom-6 left-6  md:bottom-20 md:left-20 flex flex-col text-white">
           <h1 className="text-[30px] -ml-4 md:-ml-10 font-meie-script md:text-6xl md:mb-4">
-            Where Beauty Meet Comfort
+            {homeData.homePage.heroSection.title}
           </h1>
           <p className="text-base md:text-xl max-w-1/2 font-extralight">
-            Lorem ipsum dolor sit amet consectetur. Interdum quam sodales mollis
-            aliquam.
+            {homeData.homePage.heroSection.desc}
           </p>
           <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
-            Start The Experience
+            {homeData.homePage.heroSection.button}
           </button>
         </div>
       </section>
@@ -193,21 +288,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto text-center">
           {/* Heading and subtitle */}
           <h2 className="text-[24px] md:text-[46px] font-futura font-normal mb-4">
-            Droppin Like It&apos;s Hot
+            {homeData.homePage.exploreSection.title}
           </h2>
           <p className="text-base md:text-lg mb-6 md:mb-10 max-w-3xl mx-auto font-extralight">
-            Lorem ipsum dolor sit amet consectetur. Etiam molestie augue cras
-            donec morbi ac. Gravida lectus dictum enim elit at dictum tempus
-            feugiat.
+            {homeData.homePage.exploreSection.description}
           </p>
 
           {/* CTA Button */}
           <div className="mb-16">
             <Link
-              href="/collections"
+              href="/catalogue"
               className="inline-block px-2 md:px-6 py-2 bg-[#800000] text-white font-extralight hover:bg-[#600000] transition-colors"
             >
-              Explore Your Signature Style
+              {homeData.homePage.exploreSection.button}
             </Link>
           </div>
         </div>
@@ -236,19 +329,19 @@ export default function Home() {
                 key={product.id}
                 className="w-full max-w-xs transition-all duration-300"
               >
-                <Link href={product.href}>
+                <Link href="/catalogue">
                   <div className="aspect-[3/4] mb-4 overflow-hidden relative">
                     <div className="relative w-full h-full object-center">
                       <Image
-                        src={product.imageUrl}
-                        alt={product.name}
+                        src={product.image.url}
+                        alt={product.productName}
                         fill
                         className="object-contain"
                       />
                     </div>
                   </div>
                   <h3 className="text-lg font-extralight text-center">
-                    {product.name}
+                    {product.productName}
                   </h3>
                 </Link>
               </div>
@@ -276,29 +369,32 @@ export default function Home() {
       <section className="h-fit pt-10 w-full bg-[#800000] text-white flex items-center justify-center">
         <div
           className="py-12 px-6 flex gap-4 md:gap-0 flex-row md:flex-col w-full items-center justify-between md:justify-center h-full bg-cover bg-center"
-          style={{ backgroundImage: "url('/Gift.png')" }}
+          style={{ backgroundImage: `url('${homeData.homePage.voucher.image.url}')` }}
         >
           <div className="flex flex-col items-start md:items-center">
             <h1 className="font-futura font-bold text-[24px] md:text-5xl">
-              HOLIDAY SPECIAL
+              {homeData.homePage.voucher.title}
             </h1>
             <h2 className="font-futura font-normal text-base md:text-4xl">
-              GET YOU 30% OFF SITEWIDE
+              {homeData.homePage.voucher.subtitle}
             </h2>
           </div>
-          <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
-            Get Voucher
+          <button
+            onClick={handleGetVoucher}
+            className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight"
+          >
+            {homeData.homePage.voucher.button}
           </button>
         </div>
       </section>
 
       {/* size reommendation section */}
       <section className="flex px-6 md:px-20 flex-row w-full bg-white relative gap-6 items-stretch">
-        <div className="flex flex-1 flex-col gap-6 my-12 justify-center items-center md:items-start text-center md:text-left">
+        <div className="flex w-full lg:w-2/3 flex-col gap-6 my-12 justify-center items-center md:items-start text-center md:text-left">
           <h1 className="font-futura font-normal text-[24px] md:text-[46px]">
-            Muse Knows You Best
+            {homeData.homePage.fitSection.title}
           </h1>
-          <div className="-mt-8 flex md:hidden w-full h-[200px] relative">
+          <div className="-mt-8 flex lg:hidden w-full h-[200px] relative">
             <div className="absolute inset-x-0 bottom-0 h-full">
               <Image
                 src="/person1.png"
@@ -309,25 +405,24 @@ export default function Home() {
             </div>
           </div>
           <p className="font-futura font-extralight text-base md:text-xl">
-            Every body tells a different story, and Muse is here to listen.Enter
-            your height and weight, and we'll recommend the size that fits you
-            best. Designed for comfort, crafted for confidence—so you can look
-            and feel your best, effortlessly.
+            {homeData.homePage.fitSection.description}
           </p>
-          <p className="hidden md:flex font-futura font-bold text-[24px]">
-            -We Recommend You Size
+          <p className="hidden lg:flex font-futura font-bold text-[24px]">
+            {homeData.homePage.fitSection.subdesc}
           </p>
-          <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
-            Try Our Feature!
-          </button>
+          <Link href="/checkyourfit">
+            <button className="mt-4 w-fit px-2 md:px-6 py-2 bg-[#800000] text-white text-base md:text-xl font-futura font-extralight">
+              {homeData.homePage.fitSection.button}
+            </button>
+          </Link>
         </div>
-        <div className="hidden md:flex flex-1 h-auto relative">
+        <div className="hidden lg:flex w-1/3 h-auto relative">
           <div className="absolute inset-x-0 bottom-0 h-full">
             <Image
               src="/person1.png"
               alt="Size Recommendation"
               fill
-              className="object-contain object-bottom"
+              className="object-contain object-bottom-right"
             />
           </div>
         </div>
@@ -337,7 +432,7 @@ export default function Home() {
       <section className="py-20 px-8 w-full flex flex-col bg-[#800000] text-white">
         <div className="flex w-full flex-col">
           <h2 className="text-[24px] md:text-[46px] font-futura mb-4 text-center">
-            What Our Customers Say
+            {homeData.homePage.reviewTitle}
           </h2>
 
           {loading ? (
@@ -372,7 +467,7 @@ export default function Home() {
               </div>
 
               {/* Mobile */}
-              <div className="mt-12 block md:hidden">
+              <div className="mt-4 md:mt-12 block md:hidden">
                 <div className="relative flex flex-row gap-2">
                   {/* Left Arrow */}
                   <button
@@ -391,17 +486,19 @@ export default function Home() {
 
                   {/* Review Container */}
                   <div className="flex justify-center">
-                    <div className="bg-white text-black p-5 rounded-[20px] shadow-sm border border-gray-100 flex flex-col w-full max-w-xs">
+                    <div className="bg-white text-black p-2 md:p-5 rounded-[9px] md:rounded-[20px] shadow-sm border border-gray-100 flex flex-col w-full max-w-xs">
                       <div className="mb-2">
                         <StarRating rating={visibleReviews[0]?.stars || 0} />
                       </div>
-                      <h3 className="text-[24px] mb-2">
+                      <h3 className="text-[16px] md:text-[24px] mb-2">
                         {visibleReviews[0]?.title}
                       </h3>
-                      <p className="font-light mb-4 flex-grow">
+                      <p className="text-[12px] md:text-base font-light mb-2 md:mb-4 flex-grow">
                         {visibleReviews[0]?.review}
                       </p>
-                      <p className="font-bold">- {visibleReviews[0]?.author}</p>
+                      <p className="md:text-base text-[12px] font-bold">
+                        - {visibleReviews[0]?.author}
+                      </p>
                     </div>
                   </div>
 

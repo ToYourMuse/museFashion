@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Meie_Script } from "next/font/google";
-import localFont from "next/font/local"; // Add this import
+import localFont from "next/font/local";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Load Meie Script font from Google
 const meieScript = Meie_Script({
-  weight: "400", // Meie Script is only available in weight 400
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
   variable: "--font-meie-script",
@@ -39,6 +41,19 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Footer />
+        <ToastContainer
+          position="top-center"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          toastClassName="font-futura"
+        />
       </body>
     </html>
   );

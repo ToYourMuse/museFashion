@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -44,6 +44,14 @@ interface DefaultFit {
   text5: string;
 }
 
+interface CheckFitPageData {
+  checkFitPage: {
+    title: string;
+    button: string;
+    whatsappLink: string;
+  };
+}
+
 interface SizeModel {
   weight: string;
   height: string;
@@ -61,6 +69,7 @@ const SizeChecker: React.FC = () => {
   const [showNoMatch, setShowNoMatch] = useState<boolean>(false);
   const [product, setProduct] = useState<Product | null>(null);
   const [defaultFit, setDefaultFit] = useState<DefaultFit | null>(null);
+  const [checkFitPageData, setCheckFitPageData] = useState<CheckFitPageData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentModelIndex, setCurrentModelIndex] = useState(0);
@@ -118,6 +127,24 @@ const SizeChecker: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        // Fetch check fit page data first
+        const CHECK_FIT_PAGE_QUERY = `
+          query CheckFitPage {
+            checkFitPage {
+              title
+              button
+              whatsappLink
+            }
+          }
+        `;
+
+        const checkFitPageResponse = await performRequest(CHECK_FIT_PAGE_QUERY);
+        console.log("Fetched check fit page data:", checkFitPageResponse);
+        
+        if (checkFitPageResponse && typeof checkFitPageResponse === "object" && "checkFitPage" in checkFitPageResponse) {
+          setCheckFitPageData(checkFitPageResponse as CheckFitPageData);
+        }
 
         if (productSlug) {
           // Fetch specific product data
@@ -204,8 +231,8 @@ const SizeChecker: React.FC = () => {
 
     // Define all size range (adjust these ranges as needed)
     const isAllSize =
-      heightNum >= 160 &&
-      heightNum <= 175 &&
+      heightNum >= 150 &&
+      heightNum <= 180 &&
       weightNum >= 40 &&
       weightNum <= 65;
 
@@ -265,14 +292,14 @@ const SizeChecker: React.FC = () => {
     <div className="px-6 md:px-20 pt-24 flex w-full flex-col mx-auto p-6 min-h-screen font-futura">
       <div className="flex items-center gap-4 mb-8">
         <h1 className="text-[24px] md:text-3xl font-bold text-black">
-          Check Your Fit
+          {checkFitPageData?.checkFitPage?.title || "Check Your Fit"}
         </h1>
       </div>
 
       {/* Main Content - Responsive Layout */}
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Measurement Form Section */}
-        <div className="w-full lg:w-1/3">
+        <div className="w-full lg:w-1/4">
           <div className="space-y-4">
             <div>
               <label className="block text-black font-normal text-[18px] md:text-[24px] mb-2">
@@ -283,7 +310,7 @@ const SizeChecker: React.FC = () => {
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
                 placeholder="165"
-                className="w-full px-4 py-3 border border-[#757575]/45 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent"
+                className="w-full px-4 py-3 border text-base md:text-[20px] border-[#757575]/45 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent"
               />
             </div>
 
@@ -296,7 +323,7 @@ const SizeChecker: React.FC = () => {
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="45"
-                className="w-full px-4 py-3 border border-[#757575]/45 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent"
+                className="w-full px-4 py-3 border text-base md:text-[20px] border-[#757575]/45 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-red-800 focus:border-transparent"
               />
             </div>
 
@@ -304,13 +331,13 @@ const SizeChecker: React.FC = () => {
               onClick={checkSize}
               className="w-fit bg-[#800000] text-white py-3 px-6 font-light text-base hover:bg-red-900 transition-colors"
             >
-              Check It Out!
+              {checkFitPageData?.checkFitPage?.button || "Check It Out!"}
             </button>
           </div>
         </div>
 
         {/* Result Card Section */}
-        <div className="w-full lg:w-2/3 flex items-center justify-center">
+        <div className="w-full lg:w-3/4 flex items-center justify-center">
           {/* Perfect Fit Card */}
           {showRecommendation && (
             <div className="bg-white w-full max-w-[584px] p-6 text-center border-3 rounded-[20px] border-black animate-fade-in">
@@ -328,7 +355,7 @@ const SizeChecker: React.FC = () => {
                   Effortless elegance, perfectly yours.
                 </h3>
               </div>
-              <p className="text-black text-base font-light mb-6">
+              <p className="text-black text-base font-light mb-2">
                 Designed to complement and enhance your natural form seamlessly.
               </p>
               {product ? (
@@ -366,17 +393,28 @@ const SizeChecker: React.FC = () => {
                   We're sorry, This piece may not suit your proportions.
                 </h3>
               </div>
-              <p className="text-black text-base font-light mb-6">
+              <p className="text-black text-base font-light mb-2">
                 Let our Muse Fit Specialist help you explore better-fitting
                 options.
               </p>
               <div className="space-y-3">
-                <Link
-                  href="/catalogue"
-                  className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
-                >
-                  Get Personalized Help
-                </Link>
+                {checkFitPageData?.checkFitPage?.whatsappLink ? (
+                  <a
+                    href={checkFitPageData.checkFitPage.whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
+                  >
+                    Get Personalized Help
+                  </a>
+                ) : (
+                  <Link
+                    href="/catalogue"
+                    className="block w-full bg-[#800000] text-white py-3 px-6 font-light hover:bg-red-900 transition-colors"
+                  >
+                    Get Personalized Help
+                  </Link>
+                )}
               </div>
             </div>
           )}
@@ -384,7 +422,7 @@ const SizeChecker: React.FC = () => {
       </div>
 
       {/* Models Section */}
-      <div className="mt-12 flex flex-col items-center">
+      <div className="mt-12 flex flex-col items-center md:items-start">
         <h2 className="text-center md:text-start text-base font-normal text-black mb-2">
           {sizeText}
         </h2>
@@ -508,4 +546,22 @@ const SizeChecker: React.FC = () => {
   );
 };
 
-export default SizeChecker;
+// Loading component for Suspense fallback
+const SizeCheckerLoading = () => (
+  <div className="px-6 md:px-20 pt-24 flex w-full flex-col mx-auto p-6 min-h-screen font-futura">
+    <div className="flex justify-center items-center h-64">
+      <p className="text-lg">Loading...</p>
+    </div>
+  </div>
+);
+
+// Main component wrapped with Suspense
+const SizeCheckerPage = () => {
+  return (
+    <Suspense fallback={<SizeCheckerLoading />}>
+      <SizeChecker />
+    </Suspense>
+  );
+};
+
+export default SizeCheckerPage;
