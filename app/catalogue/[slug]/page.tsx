@@ -26,6 +26,7 @@ interface Product {
       hex: string;
     };
   }[];
+  link: string;
   size: string;
   slug: string;
   productImage: {
@@ -134,6 +135,7 @@ export default function ProductDetailPage() {
                   hex
                 }
               }
+              link
               size
               slug
               productImage {
@@ -422,11 +424,11 @@ export default function ProductDetailPage() {
               </span>
 
               {/* Buy Button */}
-              <button
-                className="mt-4 w-full px-6 py-2 hover:cursor-pointer bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight hover:bg-red-900 transition-colors"
-              >
-                Buy It Now
-              </button>
+              <Link href={product.link} target="_blank">
+                <button className="mt-4 w-full px-6 py-2 hover:cursor-pointer bg-[#800000] text-white text-[14px] md:text-xl font-futura font-extralight hover:bg-red-900 transition-colors">
+                  Buy It Now
+                </button>
+              </Link>
 
               {/* Description Section */}
               <div className="pt-6">

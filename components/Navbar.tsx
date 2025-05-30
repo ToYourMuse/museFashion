@@ -33,7 +33,7 @@ const Navbar = () => {
   return (
     <>
       {/* Desktop Navbar */}
-      <div className="fixed z-10 w-full px-20 justify-between items-center p-4 bg-[#800000] text-white md:flex hidden">
+      <div className="fixed z-20 w-full px-20 justify-between items-center p-4 bg-[#800000] text-white md:flex hidden">
         <div className="font-futura font-bold">
           <Link href={"/"}>
             <p>toyourMUSE.id</p>
