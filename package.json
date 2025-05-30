@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@datocms/cda-client": "^0.2.7",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@heroui/react": "^2.7.8",
+    "@heroui/slider": "^2.4.16",
+    "@mui/material": "^7.1.0",
     "@prisma/client": "^6.8.2",
     "next": "15.3.2",
     "prisma": "^6.8.2",

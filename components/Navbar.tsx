@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const Navbar = () => {
@@ -36,7 +37,14 @@ const Navbar = () => {
       <div className="fixed z-20 w-full px-20 justify-between items-center p-4 bg-[#800000] text-white md:flex hidden">
         <div className="font-futura font-bold">
           <Link href={"/"}>
-            <p>toyourMUSE.id</p>
+            {/* <p>toyourMUSE.id</p> */}
+            <Image
+              src="/logoheader.png"
+              alt="toyourMUSE.id Logo"
+              width={40}
+              height={20}
+              className="object-contain"
+            />
           </Link>
         </div>
         <div className="flex gap-4 font-futura font-extralight">

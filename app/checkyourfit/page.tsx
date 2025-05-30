@@ -291,7 +291,7 @@ ${whatsappBottom}`;
         weightNum <= 50) ||
       (heightNum >= 156 &&
         heightNum <= 165 &&
-        weightNum >= 54 &&
+        weightNum >= 45 &&
         weightNum <= 60) ||
       (heightNum >= 166 &&
         heightNum <= 175 &&

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AiOutlineSearch } from "react-icons/ai";
 import { MdOutlineStar } from "react-icons/md";
 import { performRequest } from "@/lib/datocms";
+
 
 interface Product {
   id: string;
@@ -92,8 +93,12 @@ const ProductCard = ({ product }: { product: Product }) => {
           </div>
 
           <h3 className="text-[12px] md:text-base">{product.productName}</h3>
-          <p className="text-[14px] md:text-base font-semibold">{formatPrice(product.price)}</p>
-          <p className="text-[12px] md:text-base font-extralight">{formatSize(product.size)}</p>
+          <p className="text-[14px] md:text-base font-semibold">
+            {formatPrice(product.price)}
+          </p>
+          <p className="text-[12px] md:text-base font-extralight">
+            {formatSize(product.size)}
+          </p>
           <p className="text-[12px] md:text-base font-extralight">
             {product.soldNumber.toLocaleString("id-ID")} Terjual
           </p>
@@ -163,7 +168,8 @@ const CheckboxOption = ({
 export default function CataloguePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [cataloguePageData, setCataloguePageData] = useState<CataloguePageData | null>(null);
+  const [cataloguePageData, setCataloguePageData] =
+    useState<CataloguePageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pageDataLoading, setPageDataLoading] = useState(true);
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
@@ -183,6 +189,11 @@ export default function CataloguePage() {
     minPrice: 0,
     maxPrice: 0,
   });
+
+  // Add this new state for the slider
+  const [sliderValues, setSliderValues] = useState<[number, number]>([
+    0, 0,
+  ]);
 
   const toggleFilterSidebar = () => {
     setIsFilterSidebarOpen(!isFilterSidebarOpen);
@@ -204,10 +215,16 @@ export default function CataloguePage() {
           }
         `;
 
-        const cataloguePageResponse = await performRequest(CATALOGUE_PAGE_QUERY);
+        const cataloguePageResponse = await performRequest(
+          CATALOGUE_PAGE_QUERY
+        );
         console.log("Fetched catalogue page data:", cataloguePageResponse);
-        
-        if (cataloguePageResponse && typeof cataloguePageResponse === "object" && "cataloguePage" in cataloguePageResponse) {
+
+        if (
+          cataloguePageResponse &&
+          typeof cataloguePageResponse === "object" &&
+          "cataloguePage" in cataloguePageResponse
+        ) {
           setCataloguePageData(cataloguePageResponse as CataloguePageData);
         }
       } catch (error) {
@@ -278,14 +295,19 @@ export default function CataloguePage() {
           setAvailableSizes(Array.from(sizes));
           setPriceRange({ min: minPrice, max: maxPrice });
 
-          // Initialize filters with empty arrays (unchecked by default)
+          // Initialize filters and slider with actual price range
+          const initialMin = Math.floor(minPrice);
+          const initialMax = Math.ceil(maxPrice);
+
           setFilters((prev) => ({
             ...prev,
-            colors: [], // Start with no colors selected
-            sizes: [], // Start with no sizes selected
-            minPrice: 0, // Allow user to set any minimum
-            maxPrice: 999999999, // Allow user to set any maximum
+            colors: [],
+            sizes: [],
+            minPrice: initialMin,
+            maxPrice: initialMax,
           }));
+
+          setSliderValues([initialMin, initialMax]);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -331,23 +353,34 @@ export default function CataloguePage() {
     }));
   };
 
-  const handleMinPriceChange = (value: number) => {
-    // Allow any positive number, don't clamp to existing product range
+  // Update these functions to work with the slider
+  const handleMinPriceChange = useCallback((value: number) => {
     const validValue = Math.max(0, value || 0);
     setFilters((prev) => ({
       ...prev,
       minPrice: validValue,
     }));
-  };
+    setSliderValues((prev) => [validValue, prev[1]]);
+  }, []);
 
-  const handleMaxPriceChange = (value: number) => {
-    // Allow any positive number, don't clamp to existing product range
+  const handleMaxPriceChange = useCallback((value: number) => {
     const validValue = Math.max(0, value || 999999999);
     setFilters((prev) => ({
       ...prev,
       maxPrice: validValue,
     }));
-  };
+    setSliderValues((prev) => [prev[0], validValue]);
+  }, []);
+
+  // Add this new function to handle slider changes
+  const handleSliderChange = useCallback((values: [number, number]) => {
+    setSliderValues(values);
+    setFilters((prev) => ({
+      ...prev,
+      minPrice: values[0],
+      maxPrice: values[1],
+    }));
+  }, []);
 
   const filteredProducts = products
     .filter((product) => {
@@ -400,39 +433,203 @@ export default function CataloguePage() {
       return 0; // No sorting if neither is selected
     });
 
+  // Replace the DualRangeSlider component with this improved version
+  const DualRangeSlider = ({
+    min,
+    max,
+    values,
+    onChange,
+  }: {
+    min: number;
+    max: number;
+    values: [number, number];
+    onChange: (values: [number, number]) => void;
+  }) => {
+    const [isDragging, setIsDragging] = useState<"min" | "max" | null>(null);
+    const sliderRef = useRef<HTMLDivElement>(null);
+
+    const calculateValueFromPosition = useCallback((clientX: number) => {
+      if (!sliderRef.current) return 0;
+
+      const rect = sliderRef.current.getBoundingClientRect();
+      const percentage = Math.max(
+        0,
+        Math.min(1, (clientX - rect.left) / rect.width)
+      );
+      return Math.round(min + percentage * (max - min));
+    }, [min, max]);
+
+    const handleMouseDown = (type: "min" | "max") => (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(type);
+    };
+
+    const handleTouchStart = (type: "min" | "max") => (e: React.TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(type);
+    };
+
+    const updateValue = useCallback(
+      (clientX: number) => {
+        if (!isDragging) return;
+
+        const newValue = calculateValueFromPosition(clientX);
+
+        if (isDragging === "min") {
+          const newMin = Math.min(newValue, values[1] - 1000);
+          const clampedMin = Math.max(min, newMin);
+          if (clampedMin !== values[0]) {
+            onChange([clampedMin, values[1]]);
+          }
+        } else {
+          const newMax = Math.max(newValue, values[0] + 1000);
+          const clampedMax = Math.min(max, newMax);
+          if (clampedMax !== values[1]) {
+            onChange([values[0], clampedMax]);
+          }
+        }
+      },
+      [isDragging, calculateValueFromPosition, values, onChange, min, max]
+    );
+
+    const handleMouseMove = useCallback(
+      (e: MouseEvent) => {
+        if (isDragging) {
+          updateValue(e.clientX);
+        }
+      },
+      [isDragging, updateValue]
+    );
+
+    const handleTouchMove = useCallback(
+      (e: TouchEvent) => {
+        if (isDragging && e.touches[0]) {
+          e.preventDefault();
+          updateValue(e.touches[0].clientX);
+        }
+      },
+      [isDragging, updateValue]
+    );
+
+    const handleEnd = useCallback(() => {
+      setIsDragging(null);
+    }, []);
+
+    const handleSliderClick = useCallback(
+      (e: React.MouseEvent) => {
+        if (isDragging) return;
+
+        const newValue = calculateValueFromPosition(e.clientX);
+        const distanceToMin = Math.abs(newValue - values[0]);
+        const distanceToMax = Math.abs(newValue - values[1]);
+
+        if (distanceToMin < distanceToMax) {
+          const newMin = Math.min(newValue, values[1] - 1000);
+          onChange([Math.max(min, newMin), values[1]]);
+        } else {
+          const newMax = Math.max(newValue, values[0] + 1000);
+          onChange([values[0], Math.min(max, newMax)]);
+        }
+      },
+      [calculateValueFromPosition, values, onChange, min, max, isDragging]
+    );
+
+    useEffect(() => {
+      if (isDragging) {
+        const handleMouseMoveGlobal = (e: MouseEvent) => handleMouseMove(e);
+        const handleMouseUpGlobal = () => handleEnd();
+        const handleTouchMoveGlobal = (e: TouchEvent) => handleTouchMove(e);
+        const handleTouchEndGlobal = () => handleEnd();
+
+        document.addEventListener("mousemove", handleMouseMoveGlobal, {
+          passive: false,
+        });
+        document.addEventListener("mouseup", handleMouseUpGlobal);
+        document.addEventListener("touchmove", handleTouchMoveGlobal, {
+          passive: false,
+        });
+        document.addEventListener("touchend", handleTouchEndGlobal);
+
+        return () => {
+          document.removeEventListener("mousemove", handleMouseMoveGlobal);
+          document.removeEventListener("mouseup", handleMouseUpGlobal);
+          document.removeEventListener("touchmove", handleTouchMoveGlobal);
+          document.removeEventListener("touchend", handleTouchEndGlobal);
+        };
+      }
+    }, [isDragging, handleMouseMove, handleTouchMove, handleEnd]);
+
+    const getPercentage = (value: number) => {
+      if (max === min) return 0;
+      return ((value - min) / (max - min)) * 100;
+    };
+
+    return (
+      <div className="px-2 py-4">
+        <div
+          ref={sliderRef}
+          className="relative h-2 bg-gray-200 rounded-full cursor-pointer select-none"
+          onClick={handleSliderClick}
+        >
+          {/* Track between handles */}
+          <div
+            className="absolute h-2 bg-black rounded-full pointer-events-none"
+            style={{
+              left: `${getPercentage(values[0])}%`,
+              width: `${Math.max(
+                0,
+                getPercentage(values[1]) - getPercentage(values[0])
+              )}%`,
+            }}
+          />
+
+          {/* Min handle */}
+          <div
+            className={`absolute w-4 h-4 bg-white border-2 border-black rounded-full transform -translate-x-1/2 -translate-y-1 z-10 ${
+              isDragging === "min"
+                ? "cursor-grabbing scale-110 shadow-lg"
+                : "cursor-grab hover:scale-105"
+            } transition-transform duration-150`}
+            style={{ left: `${getPercentage(values[0])}%` }}
+            onMouseDown={handleMouseDown("min")}
+            onTouchStart={handleTouchStart("min")}
+          />
+
+          {/* Max handle */}
+          <div
+            className={`absolute w-4 h-4 bg-white border-2 border-black rounded-full transform -translate-x-1/2 -translate-y-1 z-10 ${
+              isDragging === "max"
+                ? "cursor-grabbing scale-110 shadow-lg"
+                : "cursor-grab hover:scale-105"
+            } transition-transform duration-150`}
+            style={{ left: `${getPercentage(values[1])}%` }}
+            onMouseDown={handleMouseDown("max")}
+            onTouchStart={handleTouchStart("max")}
+          />
+        </div>
+
+        {/* Price display */}
+        <div className="flex justify-between mt-3 text-xs text-gray-600">
+          <span>{formatPrice(values[0])}</span>
+          <span>{formatPrice(values[1])}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // Update the FilterContent component to use the slider
   const FilterContent = () => (
     <>
       {/* Sort by Price */}
       <FilterSection title="Sort By Price">
-        <div className="flex my-2 gap-2 items-center justify-center">
-          <div>
-            <input
-              type="number"
-              value={filters.minPrice || ""}
-              onChange={(e) =>
-                handleMinPriceChange(Number(e.target.value))
-              }
-              placeholder="Harga"
-              min="0"
-              className="w-full px-2 py-[6px] border placeholder:text-center border-[#D7D7D7] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm"
-            />
-          </div>
-          <div className="text-center text-gray-400 text-xs w-[11px] border border-[#999999]"></div>
-          <div>
-            <input
-              type="number"
-              value={
-                filters.maxPrice === 999999999 ? "" : filters.maxPrice
-              }
-              onChange={(e) =>
-                handleMaxPriceChange(Number(e.target.value))
-              }
-              placeholder="Harga"
-              min="0"
-              className="w-full px-2 py-[6px] border placeholder:text-center border-[#D7D7D7] rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-sm"
-            />
-          </div>
-        </div>
+        <DualRangeSlider
+          min={priceRange.min || 0}
+          max={priceRange.max || 1000000}
+          values={sliderValues}
+          onChange={handleSliderChange}
+        />
         <RadioOption
           label="from low to high"
           checked={filters.priceSort === "low-to-high"}
@@ -505,7 +702,11 @@ export default function CataloguePage() {
         )}
 
         {/* Mobile Filter Sidebar */}
-        <div className={`fixed top-0 right-0 h-full w-80 bg-white transform ${isFilterSidebarOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out z-40 md:hidden overflow-y-auto`}>
+        <div
+          className={`fixed top-0 right-0 h-full w-80 bg-white transform ${
+            isFilterSidebarOpen ? "translate-x-0" : "translate-x-full"
+          } transition-transform duration-300 ease-in-out z-40 md:hidden overflow-y-auto`}
+        >
           <div className="p-6">
             {/* Header with close button */}
             <div className="flex items-center mb-6">
@@ -514,8 +715,18 @@ export default function CataloguePage() {
                 className="p-2 focus:outline-none"
                 aria-label="Close filter"
               >
-                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6 text-black"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
               <h2 className="font-futura font-bold text-lg text-black">
@@ -535,16 +746,23 @@ export default function CataloguePage() {
           <div className="flex flex-col md:flex-row w-full items-center justify-between mb-4 md:mb-8">
             <div className="flex flex-row w-full justify-between items-center">
               <h1 className="text-[24px] md:text-4xl font-futura font-bold text-black">
-                {pageDataLoading 
-                  ? "Loading..." 
-                  : cataloguePageData?.cataloguePage?.title || "Your Daily Muse"
-                }
+                {pageDataLoading
+                  ? "Loading..."
+                  : cataloguePageData?.cataloguePage?.title ||
+                    "Your Daily Muse"}
               </h1>
-              <button 
+              <button
                 onClick={toggleFilterSidebar}
                 className="md:hidden bg-[#800000] px-2 py-1 text-white rounded-[8px] text-[12px] font-light"
               >
-                Semua Filter <Image src="/assets/filter.svg" alt="Filter Icon" width={16} height={16} className="inline-block ml-1" />
+                Semua Filter{" "}
+                <Image
+                  src="/assets/filter.svg"
+                  alt="Filter Icon"
+                  width={16}
+                  height={16}
+                  className="inline-block ml-1"
+                />
               </button>
             </div>
 
